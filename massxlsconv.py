@@ -6,6 +6,11 @@ import pandas as pd
 
 
 def convert(file):
+    if os.path.exists(os.path.dirname(file.path) + '/gis/' +
+                      file.name + ' ΓΙΑ gis.xlsx'):
+        print("Already converted. Skipping...")
+        return
+
     # Διάβασε το αρχείο μετατρέποντας τα πάντα σε str
     # και αγνοώντας τα κενά κελιά
     df = pd.read_excel(file.path, dtype=str, keep_default_na=False)
@@ -40,8 +45,12 @@ def convert(file):
                 "Διεύθυνση, περιοχή", "Πληροφορίες", "Σχολείο Τοποθέτησης",
                 "email Γονέα", "Διεύθυνση για Google (προαιρετικό)",
                 "Συντεταγμένες Διεύθυνσης (προαιρετικό)"]]
-    with pd.ExcelWriter(os.path.dirname(file.path) + '/' +
-                        file.name + 'ΓΙΑ gis.xlsx') as writer:
+    try:
+        os.mkdir(os.path.dirname(file.path)+"/gis")
+    except FileExistsError:
+        pass
+    with pd.ExcelWriter(os.path.dirname(file.path) + '/gis/' +
+                        file.name + ' ΓΙΑ gis.xlsx') as writer:
         newdf.to_excel(writer)
         writer.save()
 
@@ -50,13 +59,14 @@ def scandir(dirlist):
     while dirlist:
         with os.scandir(dirlist.pop()) as it:
             for entry in it:
-                if entry.is_dir():
+                if entry.is_dir() and entry.name != 'gis':
                     print("Found dir", entry.name)
                     dirlist.append(entry.path)
                 else:
                     filename = entry.name.lower()
                     if filename.endswith('.xls') or \
                        filename.endswith('.xlsx'):
+                        print("Converting file", entry.name)
                         convert(entry)
 
 
